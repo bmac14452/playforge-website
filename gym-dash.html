@@ -1,0 +1,795 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gym Dash 2.0 | PlayForge</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  color: #24243a;
+  background: linear-gradient(135deg, #f8f7ff, #eaf3ff);
+}
+
+nav {
+  background: white;
+  padding: 20px 6%;
+  border-bottom: 1px solid #e8e5f2;
+}
+
+nav a {
+  color: #7155ed;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.container {
+  max-width: 1050px;
+  margin: 35px auto;
+  padding: 15px;
+}
+
+.panel {
+  background: white;
+  border-radius: 24px;
+  padding: 25px;
+  text-align: center;
+  box-shadow: 0 15px 45px rgba(40,30,90,.08);
+}
+
+h1 {
+  font-size: 38px;
+  margin: 8px 0;
+}
+
+.subtitle {
+  color: #74758a;
+  line-height: 1.6;
+}
+
+.stats {
+  display: flex;
+  gap: 12px;
+  margin: 22px 0;
+}
+
+.stat {
+  flex: 1;
+  background: #f1efff;
+  padding: 15px 5px;
+  border-radius: 14px;
+}
+
+.stat strong {
+  display: block;
+  font-size: 27px;
+  color: #7155ed;
+}
+
+.stat span {
+  font-size: 11px;
+  color: #77778a;
+  font-weight: bold;
+}
+
+.game-wrap {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 2px solid #dedbf1;
+  background: #eaf4ff;
+  touch-action: manipulation;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.overlay-box {
+  max-width: 430px;
+}
+
+.overlay h2 {
+  font-size: 29px;
+  margin-bottom: 10px;
+}
+
+.overlay p {
+  color: #66677d;
+  line-height: 1.6;
+}
+
+button {
+  background: #7155ed;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 15px 28px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button:hover {
+  background: #5940d3;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.controls button {
+  min-width: 145px;
+}
+
+.instructions {
+  color: #77778a;
+  font-size: 13px;
+}
+
+.reward {
+  display: none;
+  background: #f0edff;
+  border: 2px dashed #7155ed;
+  border-radius: 18px;
+  padding: 25px;
+  margin-top: 20px;
+}
+
+.reward h2 {
+  color: #7155ed;
+}
+
+.code {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin: 15px 0;
+}
+
+.small {
+  font-size: 12px;
+  color: #77778a;
+}
+
+@media(max-width:600px) {
+  .panel { padding: 12px; }
+  h1 { font-size: 29px; }
+  .stat strong { font-size: 21px; }
+  .controls button { min-width: 0; flex: 1; }
+  .overlay h2 { font-size: 22px; }
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+  <a href="index.html">← Back to PlayForge</a>
+</nav>
+
+<div class="container">
+<div class="panel">
+
+<h1>GYM DASH <span style="color:#7155ed">2.0</span></h1>
+
+<p class="subtitle">
+  Jump over kettlebells, slide under barriers,
+  and collect dumbbells. Survive 30 seconds
+  to unlock your reward!
+</p>
+
+<div class="stats">
+  <div class="stat">
+    <strong id="time">30</strong>
+    <span>SECONDS LEFT</span>
+  </div>
+  <div class="stat">
+    <strong id="score">0</strong>
+    <span>SCORE</span>
+  </div>
+  <div class="stat">
+    <strong id="lives">❤️❤️❤️</strong>
+    <span>HEALTH</span>
+  </div>
+</div>
+
+<div class="game-wrap">
+  <canvas id="game" width="900" height="400"></canvas>
+
+  <div class="overlay" id="overlay">
+    <div class="overlay-box">
+      <h2 id="overlayTitle">Ready to Dash?</h2>
+      <p id="overlayText">
+        Jump over kettlebells, slide under barriers,
+        and collect dumbbells to earn points.
+      </p>
+      <button id="startButton">START GAME</button>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="jumpButton">⬆ JUMP</button>
+  <button id="slideButton">⬇ SLIDE</button>
+</div>
+
+<p class="instructions">
+  Space / ↑ to jump · ↓ to slide · Mobile buttons supported
+</p>
+
+<div class="reward" id="reward">
+  <h2>🏆 YOU CRUSHED IT!</h2>
+  <p>You completed the Gym Dash challenge!</p>
+
+  <h2>BUY 3 SESSIONS, GET 1 FREE</h2>
+
+  <div class="code">DASH4</div>
+  <button id="copyButton">Copy Reward Code</button>
+
+  <p class="small">
+    Demonstration reward only. Not redeemable.
+  </p>
+</div>
+
+</div>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const W = canvas.width;
+const H = canvas.height;
+const ground = 330;
+
+const overlay = document.getElementById("overlay");
+const overlayTitle = document.getElementById("overlayTitle");
+const overlayText = document.getElementById("overlayText");
+const startButton = document.getElementById("startButton");
+const reward = document.getElementById("reward");
+
+const timeEl = document.getElementById("time");
+const scoreEl = document.getElementById("score");
+const livesEl = document.getElementById("lives");
+
+let state = "ready";
+let player;
+let objects = [];
+let score = 0;
+let lives = 3;
+let elapsed = 0;
+let spawnTimer = 0;
+let scenery = 0;
+let invincible = 0;
+let lastFrame = 0;
+let animationTime = 0;
+let lastObstacle = "";
+
+function reset() {
+  player = {
+    x: 130,
+    y: ground - 68,
+    w: 42,
+    h: 68,
+    vy: 0,
+    grounded: true,
+    sliding: false,
+    slideTime: 0
+  };
+
+  objects = [];
+  score = 0;
+  lives = 3;
+  elapsed = 0;
+  spawnTimer = 1.2;
+  scenery = 0;
+  invincible = 0;
+  animationTime = 0;
+  lastObstacle = "";
+
+  reward.style.display = "none";
+  updateStats();
+}
+
+function updateStats() {
+  timeEl.textContent = Math.max(0, Math.ceil(30 - elapsed));
+  scoreEl.textContent = score;
+  livesEl.textContent = "❤️".repeat(lives) + "🤍".repeat(3-lives);
+}
+
+function startGame() {
+  reset();
+  state = "playing";
+  overlay.classList.add("hidden");
+  lastFrame = performance.now();
+}
+
+function jump() {
+  if (state !== "playing") return;
+
+  if (player.grounded) {
+    player.sliding = false;
+    player.slideTime = 0;
+    player.h = 68;
+    player.y = ground - player.h;
+    player.vy = -740;
+    player.grounded = false;
+  }
+}
+
+function slide() {
+  if (state !== "playing") return;
+
+  if (player.grounded && !player.sliding) {
+    player.sliding = true;
+    player.slideTime = 0.75;
+    player.h = 32;
+    player.y = ground - player.h;
+  }
+}
+
+function spawnObject() {
+  const choice = Math.random();
+
+  let type;
+
+  if (choice < 0.35) {
+    type = "kettlebell";
+  } else if (choice < 0.70) {
+    type = "barrier";
+  } else {
+    type = "dumbbell";
+  }
+
+  // Avoid long runs of identical obstacles
+  if (type !== "dumbbell" && type === lastObstacle) {
+    type = type === "kettlebell" ? "barrier" : "kettlebell";
+  }
+
+  if (type !== "dumbbell") lastObstacle = type;
+
+  let obj = {
+    type: type,
+    x: W + 50,
+    collected: false
+  };
+
+  if (type === "kettlebell") {
+    obj.y = ground - 48;
+    obj.w = 44;
+    obj.h = 48;
+  }
+
+  if (type === "barrier") {
+    obj.y = ground - 92;
+    obj.w = 62;
+    obj.h = 47;
+  }
+
+  if (type === "dumbbell") {
+    obj.y = ground - 115;
+    obj.w = 42;
+    obj.h = 30;
+  }
+
+  objects.push(obj);
+}
+
+function collides(a,b) {
+  const pad = 7;
+
+  return (
+    a.x + pad < b.x + b.w - pad &&
+    a.x + a.w - pad > b.x + pad &&
+    a.y + pad < b.y + b.h - pad &&
+    a.y + a.h - pad > b.y + pad
+  );
+}
+
+function finish(won) {
+  state = "finished";
+  overlay.classList.remove("hidden");
+
+  if (won) {
+    overlayTitle.textContent = "🏆 CHALLENGE COMPLETE!";
+    overlayText.textContent =
+      "You survived Gym Dash! Your exclusive reward is below.";
+    reward.style.display = "block";
+  } else {
+    overlayTitle.textContent = "GAME OVER!";
+    overlayText.textContent =
+      "You ran out of health. Try again to unlock your reward.";
+  }
+
+  startButton.textContent = "PLAY AGAIN";
+}
+
+function update(dt) {
+  if (state !== "playing") return;
+
+  elapsed += dt;
+  animationTime += dt;
+  scenery += (200 + elapsed * 5) * dt;
+
+  if (elapsed >= 30) {
+    elapsed = 30;
+    updateStats();
+    finish(true);
+    return;
+  }
+
+  const speed = 300 + Math.min(elapsed * 6, 130);
+
+  // Gravity and jumping
+  if (!player.grounded) {
+    player.vy += 1900 * dt;
+    player.y += player.vy * dt;
+
+    if (player.y >= ground - player.h) {
+      player.y = ground - player.h;
+      player.vy = 0;
+      player.grounded = true;
+    }
+  }
+
+  // Sliding
+  if (player.sliding) {
+    player.slideTime -= dt;
+
+    if (player.slideTime <= 0) {
+      player.sliding = false;
+      player.h = 68;
+      player.y = ground - player.h;
+    }
+  }
+
+  if (invincible > 0) invincible -= dt;
+
+  // Spawn new obstacles and collectibles
+  spawnTimer -= dt;
+
+  if (spawnTimer <= 0) {
+    spawnObject();
+    spawnTimer = 1.05 + Math.random() * 0.5;
+  }
+
+  for (const obj of objects) {
+    obj.x -= speed * dt;
+
+    if (!obj.collected && collides(player,obj)) {
+      obj.collected = true;
+
+      if (obj.type === "dumbbell") {
+        score += 100;
+      } else if (invincible <= 0) {
+        lives--;
+        invincible = 1.1;
+      }
+    }
+  }
+
+  objects = objects.filter(obj =>
+    obj.x + obj.w > -50 && !obj.collected
+  );
+
+  updateStats();
+
+  if (lives <= 0) finish(false);
+}
+
+// Draw gym background
+function drawBackground() {
+  const gradient = ctx.createLinearGradient(0,0,0,H);
+  gradient.addColorStop(0,"#d9edff");
+  gradient.addColorStop(1,"#f5faff");
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0,0,W,H);
+
+  // Wall panels
+  for (let i = 0; i < 7; i++) {
+    let x = i*180 - (scenery*0.25 % 180);
+
+    ctx.fillStyle = "#bdd6ee";
+    ctx.fillRect(x+25,65,125,145);
+
+    ctx.fillStyle = "#e9f7ff";
+    ctx.fillRect(x+32,72,111,131);
+
+    // Gym equipment silhouette
+    ctx.fillStyle = "#9fb7cf";
+    ctx.fillRect(x+70,140,12,70);
+    ctx.fillRect(x+45,150,65,8);
+    ctx.fillRect(x+48,130,9,35);
+    ctx.fillRect(x+103,130,9,35);
+  }
+
+  // Wall trim
+  ctx.fillStyle = "#c5d8ea";
+  ctx.fillRect(0,245,W,10);
+
+  // Floor
+  ctx.fillStyle = "#c7b9f4";
+  ctx.fillRect(0,ground,W,H-ground);
+
+  ctx.fillStyle = "#8c77da";
+  ctx.fillRect(0,ground,W,8);
+
+  // Moving floor markings
+  ctx.fillStyle = "#ac9ae8";
+  for (let i = 0; i < 12; i++) {
+    let x = i*110 - (scenery % 110);
+    ctx.fillRect(x,375,65,5);
+  }
+
+  // Gym sign
+  ctx.fillStyle = "#7155ed";
+  ctx.font = "bold 22px Arial";
+  ctx.fillText("PLAYFORGE FITNESS",25,35);
+}
+
+// Draw the athlete facing right
+function drawPlayer() {
+  if (invincible > 0 &&
+      Math.floor(invincible*12)%2 === 0) return;
+
+  const x = player.x;
+  const y = player.y;
+  const run = Math.sin(animationTime*17);
+
+  ctx.save();
+
+  if (player.sliding) {
+    // Sliding body
+    ctx.fillStyle = "#7155ed";
+    ctx.fillRect(x+5,y+8,42,20);
+
+    ctx.fillStyle = "#f1b98b";
+    ctx.beginPath();
+    ctx.arc(x+45,y+10,11,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#24243a";
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(x+8,y+25);
+    ctx.lineTo(x-10,y+30);
+    ctx.moveTo(x+20,y+25);
+    ctx.lineTo(x+5,y+32);
+    ctx.stroke();
+
+  } else {
+    // Legs
+    ctx.strokeStyle = "#24243a";
+    ctx.lineWidth = 8;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+
+    if (player.grounded) {
+      ctx.moveTo(x+20,y+42);
+      ctx.lineTo(x+12+run*11,y+66);
+
+      ctx.moveTo(x+20,y+42);
+      ctx.lineTo(x+30-run*11,y+66);
+    } else {
+      ctx.moveTo(x+20,y+42);
+      ctx.lineTo(x+5,y+56);
+
+      ctx.moveTo(x+20,y+42);
+      ctx.lineTo(x+35,y+54);
+    }
+
+    ctx.stroke();
+
+    // Torso
+    ctx.fillStyle = "#7155ed";
+    ctx.fillRect(x+8,y+20,27,29);
+
+    // Arms
+    ctx.strokeStyle = "#f1b98b";
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(x+30,y+27);
+    ctx.lineTo(x+40,y+34+run*6);
+
+    ctx.moveTo(x+12,y+28);
+    ctx.lineTo(x+2,y+35-run*6);
+    ctx.stroke();
+
+    // Head
+    ctx.fillStyle = "#f1b98b";
+    ctx.beginPath();
+    ctx.arc(x+25,y+11,13,0,Math.PI*2);
+    ctx.fill();
+
+    // Hair
+    ctx.fillStyle = "#24243a";
+    ctx.beginPath();
+    ctx.arc(x+23,y+5,12,Math.PI,Math.PI*2);
+    ctx.fill();
+
+    // Eye facing right
+    ctx.fillStyle = "#24243a";
+    ctx.beginPath();
+    ctx.arc(x+33,y+12,2,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawKettlebell(o) {
+  ctx.save();
+  ctx.translate(o.x,o.y);
+
+  ctx.strokeStyle = "#34354d";
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.arc(22,14,11,Math.PI,0);
+  ctx.stroke();
+
+  ctx.fillStyle = "#ff765e";
+  ctx.beginPath();
+  ctx.roundRect(3,15,38,32,12);
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 13px Arial";
+  ctx.fillText("16",14,36);
+
+  ctx.restore();
+}
+
+function drawBarrier(o) {
+  ctx.save();
+  ctx.translate(o.x,o.y);
+
+  // Suspended bar supported from above
+  ctx.strokeStyle = "#50546f";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(10,-90);
+  ctx.lineTo(10,0);
+  ctx.moveTo(52,-90);
+  ctx.lineTo(52,0);
+  ctx.stroke();
+
+  ctx.fillStyle = "#ffb547";
+  ctx.fillRect(0,0,62,47);
+
+  ctx.fillStyle = "#ffffff";
+  for(let i=0;i<3;i++) {
+    ctx.save();
+    ctx.translate(i*23+5,8);
+    ctx.rotate(-0.6);
+    ctx.fillRect(0,0,10,31);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+function drawDumbbell(o) {
+  ctx.save();
+  ctx.translate(o.x,o.y);
+
+  ctx.strokeStyle = "#34354d";
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.moveTo(5,15);
+  ctx.lineTo(38,15);
+  ctx.stroke();
+
+  ctx.fillStyle = "#35c997";
+  ctx.fillRect(0,3,12,25);
+  ctx.fillRect(30,3,12,25);
+
+  ctx.restore();
+}
+
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  drawBackground();
+
+  for (const obj of objects) {
+    if (obj.type === "kettlebell") drawKettlebell(obj);
+    if (obj.type === "barrier") drawBarrier(obj);
+    if (obj.type === "dumbbell") drawDumbbell(obj);
+  }
+
+  drawPlayer();
+
+  // Progress bar
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(600,20,260,14);
+
+  ctx.fillStyle = "#7155ed";
+  ctx.fillRect(600,20,260*(elapsed/30),14);
+
+  ctx.strokeStyle = "#b6a9e9";
+  ctx.strokeRect(600,20,260,14);
+}
+
+function loop(timestamp) {
+  const dt = Math.min(
+    (timestamp-lastFrame)/1000 || 0,
+    0.04
+  );
+
+  lastFrame = timestamp;
+  update(dt);
+  draw();
+
+  requestAnimationFrame(loop);
+}
+
+// Controls
+startButton.addEventListener("click",startGame);
+
+document.getElementById("jumpButton")
+  .addEventListener("pointerdown",jump);
+
+document.getElementById("slideButton")
+  .addEventListener("pointerdown",slide);
+
+document.addEventListener("keydown",e => {
+  if (["Space","ArrowUp","ArrowDown"].includes(e.code)) {
+    e.preventDefault();
+  }
+
+  if (e.repeat) return;
+
+  if (e.code === "Space" || e.code === "ArrowUp") {
+    jump();
+  }
+
+  if (e.code === "ArrowDown") {
+    slide();
+  }
+});
+
+document.getElementById("copyButton")
+  .addEventListener("click",async () => {
+    try {
+      await navigator.clipboard.writeText("DASH4");
+      alert("Demo code copied!");
+    } catch {
+      alert("Your demo code is DASH4");
+    }
+  });
+
+reset();
+requestAnimationFrame(loop);
+</script>
+
+</body>
+</html>

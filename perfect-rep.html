@@ -1,0 +1,407 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perfect Rep | PlayForge</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #f7f8ff, #eae6ff);
+  color: #24243c;
+}
+
+nav {
+  padding: 22px 6%;
+  background: white;
+  border-bottom: 1px solid #e8e5f2;
+}
+
+nav a {
+  color: #7155ed;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.container {
+  max-width: 650px;
+  margin: 55px auto;
+  padding: 20px;
+}
+
+.game {
+  background: white;
+  padding: 35px;
+  border-radius: 24px;
+  text-align: center;
+  box-shadow: 0 15px 50px rgba(50, 30, 110, 0.1);
+}
+
+h1 {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  color: #74758a;
+  line-height: 1.6;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-around;
+  margin: 30px 0;
+  gap: 10px;
+}
+
+.stat {
+  background: #f5f3ff;
+  padding: 18px;
+  border-radius: 15px;
+  flex: 1;
+}
+
+.stat strong {
+  display: block;
+  font-size: 28px;
+  color: #7155ed;
+}
+
+.stat span {
+  font-size: 12px;
+  color: #74758a;
+}
+
+.lifter {
+  font-size: 90px;
+  margin: 25px 0;
+  transition: transform 0.2s;
+}
+
+.lifter.lifting {
+  transform: translateY(-20px) scale(1.1);
+}
+
+.meter {
+  position: relative;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(
+    to right,
+    #ff7272 0%,
+    #ffc66d 30%,
+    #4ad69a 40%,
+    #4ad69a 60%,
+    #ffc66d 70%,
+    #ff7272 100%
+  );
+  margin: 35px 0 15px;
+  overflow: hidden;
+}
+
+.target {
+  position: absolute;
+  left: 40%;
+  width: 20%;
+  height: 100%;
+  border: 2px solid #158a55;
+  border-radius: 4px;
+}
+
+.indicator {
+  position: absolute;
+  top: -4px;
+  height: 50px;
+  width: 7px;
+  border-radius: 5px;
+  background: #24243c;
+  left: 0%;
+  box-shadow: 0 0 5px rgba(0,0,0,0.3);
+}
+
+button {
+  background: #7155ed;
+  color: white;
+  border: none;
+  padding: 16px 35px;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+button:hover {
+  background: #5940d5;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.message {
+  min-height: 35px;
+  font-size: 19px;
+  font-weight: bold;
+  margin-top: 20px;
+}
+
+.reward {
+  display: none;
+  background: #f0edff;
+  border: 2px dashed #7155ed;
+  padding: 25px;
+  border-radius: 18px;
+  margin-top: 25px;
+}
+
+.reward h2 {
+  color: #7155ed;
+}
+
+.code {
+  background: white;
+  border: 1px solid #ded8ff;
+  padding: 15px;
+  border-radius: 10px;
+  font-size: 23px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-top: 15px;
+}
+
+.small {
+  font-size: 12px;
+  color: #74758a;
+}
+
+@media(max-width: 500px) {
+  .game {
+    padding: 22px;
+  }
+
+  h1 {
+    font-size: 30px;
+  }
+
+  .stat {
+    padding: 12px 5px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+  <a href="index.html">← Back to PlayForge</a>
+</nav>
+
+<div class="container">
+  <div class="game">
+
+    <h1>🏋️ Perfect Rep</h1>
+    <p class="subtitle">
+      Time your lift perfectly! Hit the green zone
+      to complete a rep. Get 3 perfect reps in
+      5 attempts to unlock your reward.
+    </p>
+
+    <div class="stats">
+      <div class="stat">
+        <strong id="reps">0</strong>
+        <span>PERFECT REPS</span>
+      </div>
+
+      <div class="stat">
+        <strong id="attempts">5</strong>
+        <span>ATTEMPTS LEFT</span>
+      </div>
+
+      <div class="stat">
+        <strong id="score">0</strong>
+        <span>SCORE</span>
+      </div>
+    </div>
+
+    <div id="lifter" class="lifter">🏋️</div>
+
+    <p>Hit the green zone!</p>
+
+    <div class="meter" id="meter">
+      <div class="target"></div>
+      <div class="indicator" id="indicator"></div>
+    </div>
+
+    <p class="small">Tap when the marker is in the green!</p>
+
+    <button id="liftButton" onclick="lift()">LIFT!</button>
+
+    <div class="message" id="message">
+      Ready? Time your first lift!
+    </div>
+
+    <div class="reward" id="reward">
+      <h2>🎉 YOU CRUSHED IT!</h2>
+      <p>You unlocked an exclusive personal training offer!</p>
+
+      <h2>BUY 3 SESSIONS<br>GET 1 FREE</h2>
+
+      <div class="code" id="rewardCode">GAINS4</div>
+
+      <button onclick="copyCode()">Copy Reward Code</button>
+
+      <p class="small">
+        Demo reward only. Not redeemable.
+      </p>
+    </div>
+
+    <button id="restartButton"
+      onclick="restart()"
+      style="display:none;">
+      Play Again
+    </button>
+
+  </div>
+</div>
+
+<script>
+let position = 0;
+let direction = 1;
+let speed = 0.65;
+let perfectReps = 0;
+let attemptsLeft = 5;
+let score = 0;
+let playing = true;
+
+const indicator = document.getElementById("indicator");
+const meter = document.getElementById("meter");
+const message = document.getElementById("message");
+const lifter = document.getElementById("lifter");
+const liftButton = document.getElementById("liftButton");
+const restartButton = document.getElementById("restartButton");
+const reward = document.getElementById("reward");
+
+let lastTime = null;
+
+function animate(timestamp) {
+  if (lastTime === null) lastTime = timestamp;
+
+  const delta = Math.min((timestamp - lastTime) / 16.67, 3);
+  lastTime = timestamp;
+
+  if (playing) {
+    position += direction * speed * delta;
+
+    if (position >= 100) {
+      position = 100;
+      direction = -1;
+    }
+
+    if (position <= 0) {
+      position = 0;
+      direction = 1;
+    }
+
+    indicator.style.left = `calc(${position}% - 3px)`;
+  }
+
+  requestAnimationFrame(animate);
+}
+
+requestAnimationFrame(animate);
+
+function lift() {
+  if (!playing) return;
+
+  attemptsLeft--;
+
+  lifter.classList.add("lifting");
+
+  setTimeout(() => {
+    lifter.classList.remove("lifting");
+  }, 220);
+
+  if (position >= 40 && position <= 60) {
+    perfectReps++;
+    score += 100;
+    message.textContent = "💪 PERFECT REP! +100";
+    message.style.color = "#159660";
+  } else {
+    message.textContent = "❌ Missed! Try again!";
+    message.style.color = "#ed6262";
+  }
+
+  document.getElementById("reps").textContent = perfectReps;
+  document.getElementById("attempts").textContent = attemptsLeft;
+  document.getElementById("score").textContent = score;
+
+  speed += 0.12;
+
+  if (perfectReps >= 3) {
+    finish(true);
+  } else if (attemptsLeft <= 0) {
+    finish(false);
+  }
+}
+
+function finish(won) {
+  playing = false;
+  liftButton.disabled = true;
+  restartButton.style.display = "inline-block";
+
+  if (won) {
+    message.textContent = "🏆 Challenge Completed!";
+    reward.style.display = "block";
+  } else {
+    message.textContent = "Challenge Over! Give it another shot.";
+    message.style.color = "#ed6262";
+  }
+}
+
+function restart() {
+  position = 0;
+  direction = 1;
+  speed = 0.65;
+  perfectReps = 0;
+  attemptsLeft = 5;
+  score = 0;
+  playing = true;
+
+  document.getElementById("reps").textContent = "0";
+  document.getElementById("attempts").textContent = "5";
+  document.getElementById("score").textContent = "0";
+
+  message.textContent = "Ready? Time your first lift!";
+  message.style.color = "#24243c";
+
+  reward.style.display = "none";
+  restartButton.style.display = "none";
+  liftButton.disabled = false;
+  lastTime = null;
+}
+
+function copyCode() {
+  const code = document.getElementById("rewardCode").textContent;
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(code)
+      .then(() => alert("Demo code copied: " + code))
+      .catch(() => alert("Copy this demo code: " + code));
+  } else {
+    alert("Copy this demo code: " + code);
+  }
+}
+</script>
+
+</body>
+</html>

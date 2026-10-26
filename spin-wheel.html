@@ -1,0 +1,449 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spin the Wheel | PlayForge</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  color: #24243b;
+  background: linear-gradient(135deg,#faf9ff,#edf3ff);
+}
+
+nav {
+  background: white;
+  padding: 20px 6%;
+  border-bottom: 1px solid #e8e5f2;
+}
+
+nav a {
+  color: #7155ed;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.container {
+  max-width: 850px;
+  margin: 35px auto;
+  padding: 15px;
+}
+
+.panel {
+  background: white;
+  padding: 30px;
+  border-radius: 24px;
+  text-align: center;
+  box-shadow: 0 15px 45px #29205b12;
+}
+
+h1 {
+  font-size: 40px;
+  margin: 8px 0;
+}
+
+.subtitle {
+  color: #77778b;
+  line-height: 1.6;
+}
+
+.wheel-area {
+  position: relative;
+  width: min(100%,520px);
+  margin: 30px auto;
+}
+
+canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+button {
+  background: #7155ed;
+  color: white;
+  border: 0;
+  border-radius: 12px;
+  padding: 16px 35px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover { background: #5840d0; }
+
+button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.status {
+  color: #77778b;
+  font-size: 14px;
+  margin: 18px 0;
+}
+
+.reward {
+  display: none;
+  max-width: 550px;
+  margin: 25px auto 0;
+  background: #f0edff;
+  border: 2px dashed #7155ed;
+  border-radius: 18px;
+  padding: 25px;
+}
+
+.reward h2 { color: #7155ed; }
+
+.reward-amount {
+  font-size: 45px;
+  font-weight: bold;
+  color: #7155ed;
+  margin: 10px 0;
+}
+
+.code {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin: 15px 0;
+}
+
+.small {
+  font-size: 12px;
+  color: #77778b;
+}
+
+@media(max-width:600px) {
+  .panel { padding: 15px; }
+  h1 { font-size: 30px; }
+  .reward-amount { font-size: 36px; }
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+  <a href="index.html">← Back to PlayForge</a>
+</nav>
+
+<div class="container">
+<div class="panel">
+
+<h1>🎡 Spin the Wheel</h1>
+
+<p class="subtitle">
+  Feeling lucky? Spin the wheel and unlock
+  a surprise discount of up to 50% off!
+</p>
+
+<div class="wheel-area">
+  <canvas id="wheel" width="600" height="600"></canvas>
+</div>
+
+<button id="spinButton">SPIN THE WHEEL</button>
+
+<p class="status" id="status">
+  Ten prizes. One spin. What will you win?
+</p>
+
+<div class="reward" id="reward">
+  <h2>🎉 CONGRATULATIONS!</h2>
+
+  <div class="reward-amount" id="discountText">
+    10% OFF
+  </div>
+
+  <p>Your exclusive discount code:</p>
+
+  <div class="code" id="rewardCode">SPIN10</div>
+
+  <button id="copyButton">COPY CODE</button>
+
+  <p class="small">
+    Demonstration discount only. Not redeemable.
+  </p>
+</div>
+
+<p class="small">
+  This is a demonstration game for the PlayForge portfolio.
+</p>
+
+</div>
+</div>
+
+<script>
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+
+const spinButton = document.getElementById("spinButton");
+const statusEl = document.getElementById("status");
+const rewardEl = document.getElementById("reward");
+const discountText = document.getElementById("discountText");
+const rewardCode = document.getElementById("rewardCode");
+
+const prizes = [
+  {discount:1, code:"SPIN1"},
+  {discount:3, code:"SPIN3"},
+  {discount:5, code:"SPIN5"},
+  {discount:7, code:"SPIN7"},
+  {discount:10,code:"SPIN10"},
+  {discount:15,code:"SPIN15"},
+  {discount:20,code:"SPIN20"},
+  {discount:25,code:"SPIN25"},
+  {discount:35,code:"SPIN35"},
+  {discount:50,code:"SPIN50"}
+];
+
+const colors = [
+  "#e8dfff",
+  "#bda9ff",
+  "#ffd2e2",
+  "#a9e8e0",
+  "#ffe4aa",
+  "#c8bbff",
+  "#ffc2cd",
+  "#b5dcff",
+  "#d6f4ba",
+  "#7155ed"
+];
+
+const TAU = Math.PI*2;
+const slice = TAU/prizes.length;
+const cx = 300;
+const cy = 300;
+const radius = 255;
+
+// The pointer stays fixed at the top.
+const pointerAngle = -Math.PI/2;
+
+let rotation = 0;
+let spinning = false;
+let startTime = 0;
+let startRotation = 0;
+let targetRotation = 0;
+let selectedIndex = -1;
+let currentCode = "";
+let lastTickIndex = -1;
+
+function normalize(angle) {
+  return ((angle%TAU)+TAU)%TAU;
+}
+
+function drawWheel() {
+  ctx.clearRect(0,0,600,600);
+
+  // Outer shadow
+  ctx.save();
+  ctx.shadowColor = "rgba(68,45,140,.25)";
+  ctx.shadowBlur = 25;
+  ctx.shadowOffsetY = 9;
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(cx,cy,radius+17,0,TAU);
+  ctx.fill();
+  ctx.restore();
+
+  // Gold-style rim
+  ctx.fillStyle = "#d5c9ff";
+  ctx.beginPath();
+  ctx.arc(cx,cy,radius+12,0,TAU);
+  ctx.fill();
+
+  // Segments
+  for(let i=0;i<prizes.length;i++) {
+    const start = rotation+i*slice;
+    const end = start+slice;
+
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,radius,start,end);
+    ctx.closePath();
+
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    // Text follows each segment's middle angle
+    const mid = start+slice/2;
+
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(mid);
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "bold 27px Arial";
+    ctx.fillStyle = i===9 ? "#ffffff" : "#30245c";
+
+    ctx.fillText(
+      prizes[i].discount+"%",
+      radius*0.67,
+      0
+    );
+
+    ctx.restore();
+  }
+
+  // Decorative rim dots
+  for(let i=0;i<30;i++) {
+    const a=i*TAU/30;
+    const x=cx+Math.cos(a)*(radius+7);
+    const y=cy+Math.sin(a)*(radius+7);
+
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath();
+    ctx.arc(x,y,3.5,0,TAU);
+    ctx.fill();
+  }
+
+  // Centre button
+  ctx.save();
+  ctx.shadowColor="rgba(50,30,110,.2)";
+  ctx.shadowBlur=15;
+
+  ctx.fillStyle="#ffffff";
+  ctx.beginPath();
+  ctx.arc(cx,cy,57,0,TAU);
+  ctx.fill();
+
+  ctx.restore();
+
+  ctx.fillStyle="#7155ed";
+  ctx.beginPath();
+  ctx.arc(cx,cy,46,0,TAU);
+  ctx.fill();
+
+  ctx.fillStyle="#ffffff";
+  ctx.font="bold 20px Arial";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.fillText("SPIN",cx,cy);
+
+  // Fixed pointer at top
+  ctx.save();
+  ctx.shadowColor="rgba(0,0,0,.2)";
+  ctx.shadowBlur=8;
+
+  ctx.fillStyle="#ff547a";
+  ctx.beginPath();
+  ctx.moveTo(cx-19,13);
+  ctx.lineTo(cx+19,13);
+  ctx.lineTo(cx,73);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+
+  ctx.textAlign="left";
+  ctx.textBaseline="alphabetic";
+}
+
+function getPointerIndex() {
+  const relative=normalize(pointerAngle-rotation);
+  return Math.floor(relative/slice)%prizes.length;
+}
+
+function spin() {
+  if(spinning) return;
+
+  spinning=true;
+  selectedIndex=-1;
+  rewardEl.style.display="none";
+  spinButton.disabled=true;
+  statusEl.textContent="The wheel is spinning...";
+
+  // Choose a uniformly random prize.
+  const chosen=Math.floor(Math.random()*prizes.length);
+
+  // Angle that places the chosen segment's
+  // centre directly under the pointer.
+  const desired=pointerAngle-(chosen+.5)*slice;
+
+  const current=normalize(rotation);
+  const delta=normalize(desired-current);
+
+  const fullSpins=5+Math.floor(Math.random()*3);
+
+  startRotation=rotation;
+  targetRotation=rotation+fullSpins*TAU+delta;
+  startTime=performance.now();
+  lastTickIndex=getPointerIndex();
+
+  requestAnimationFrame(animateSpin);
+}
+
+function easeOut(t) {
+  return 1-Math.pow(1-t,5);
+}
+
+function animateSpin(now) {
+  const duration=5600;
+  const progress=Math.min((now-startTime)/duration,1);
+
+  rotation=startRotation+
+    (targetRotation-startRotation)*easeOut(progress);
+
+  drawWheel();
+
+  const tick=getPointerIndex();
+  if(tick!==lastTickIndex) {
+    lastTickIndex=tick;
+  }
+
+  if(progress<1) {
+    requestAnimationFrame(animateSpin);
+  } else {
+    rotation=targetRotation;
+    drawWheel();
+    finishSpin();
+  }
+}
+
+function finishSpin() {
+  spinning=false;
+  selectedIndex=getPointerIndex();
+
+  const prize=prizes[selectedIndex];
+  currentCode=prize.code;
+
+  discountText.textContent=prize.discount+"% OFF";
+  rewardCode.textContent=prize.code;
+
+  rewardEl.style.display="block";
+  spinButton.disabled=false;
+  spinButton.textContent="SPIN AGAIN";
+
+  statusEl.textContent=
+    "You landed on "+prize.discount+"% off!";
+}
+
+spinButton.addEventListener("click",spin);
+
+document.getElementById("copyButton")
+  .addEventListener("click",async()=>{
+    try {
+      await navigator.clipboard.writeText(currentCode);
+      statusEl.textContent="Demo code copied: "+currentCode;
+    } catch {
+      statusEl.textContent="Your code is "+currentCode;
+    }
+  });
+
+drawWheel();
+</script>
+
+</body>
+</html>

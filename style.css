@@ -1,0 +1,304 @@
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --purple: #7155ed;
+  --dark: #19182d;
+  --muted: #72758a;
+  --background: #f8f9fd;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--background);
+  color: var(--dark);
+}
+
+a {
+  text-decoration: none;
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 7%;
+  background: white;
+  border-bottom: 1px solid #eeeeF5;
+}
+
+.logo {
+  font-size: 25px;
+  font-weight: 800;
+  color: var(--dark);
+}
+
+.logo span {
+  color: var(--purple);
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+nav a {
+  color: #45445b;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.nav-button,
+.primary-button {
+  display: inline-block;
+  padding: 14px 23px;
+  border-radius: 12px;
+  background: var(--purple);
+  color: white;
+  font-weight: 700;
+  transition: 0.2s;
+}
+
+.nav-button {
+  color: white;
+}
+
+.primary-button:hover,
+.nav-button:hover {
+  background: #573ed2;
+  transform: translateY(-2px);
+}
+
+.hero {
+  padding: 115px 20px;
+  text-align: center;
+  background: linear-gradient(135deg, #fff, #f0ecff, #eaf5ff);
+}
+
+.hero-content {
+  max-width: 850px;
+  margin: auto;
+}
+
+.eyebrow {
+  color: var(--purple);
+  font-size: 12px;
+  letter-spacing: 2px;
+  font-weight: 800;
+  margin-bottom: 18px;
+}
+
+.hero h1 {
+  font-size: clamp(38px, 6vw, 66px);
+  line-height: 1.1;
+  letter-spacing: -2px;
+  margin: 0 0 25px;
+}
+
+.hero h1 span {
+  color: var(--purple);
+}
+
+.hero p {
+  max-width: 600px;
+  margin: 0 auto 35px;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.games-section {
+  padding: 90px 7%;
+}
+
+.section-heading {
+  text-align: center;
+  margin-bottom: 45px;
+}
+
+.section-heading h2 {
+  font-size: clamp(28px, 4vw, 40px);
+  margin: 0 0 12px;
+}
+
+.section-heading p {
+  color: var(--muted);
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.game-card {
+  overflow: hidden;
+  background: white;
+  border: 1px solid #eae9f2;
+  border-radius: 20px;
+  box-shadow: 0 8px 30px rgba(25, 20, 80, 0.04);
+  transition: 0.25s;
+}
+
+.game-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 15px 40px rgba(25, 20, 80, 0.12);
+}
+
+.game-image {
+  height: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 70px;
+}
+
+.plinko {
+  background: #eee9ff;
+}
+
+.blackjack {
+  background: #e2f6ed;
+}
+
+.wheel {
+  background: #fff0db;
+}
+
+.rep {
+  background: #e5f1ff;
+}
+
+.dash {
+  background: #ffe8ed;
+}
+
+.game-info {
+  padding: 25px;
+}
+
+.category {
+  color: var(--purple);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.game-info h3 {
+  font-size: 23px;
+  margin: 10px 0;
+}
+
+.game-info p {
+  color: var(--muted);
+  line-height: 1.6;
+  font-size: 14px;
+  min-height: 68px;
+}
+
+.game-button {
+  display: block;
+  text-align: center;
+  background: #f0edff;
+  color: #6749dc;
+  padding: 13px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.about-section {
+  padding: 90px 7%;
+  background: white;
+  text-align: center;
+}
+
+.about-content {
+  max-width: 700px;
+  margin: auto;
+}
+
+.about-content h2 {
+  font-size: 38px;
+}
+
+.about-content p {
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.contact-section {
+  text-align: center;
+  padding: 90px 20px;
+  background: #f0edff;
+}
+
+.contact-section h2 {
+  font-size: 36px;
+}
+
+.contact-section p {
+  color: var(--muted);
+  margin-bottom: 30px;
+}
+
+footer {
+  text-align: center;
+  padding: 25px;
+  background: white;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .game-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .navbar {
+    padding: 18px 5%;
+  }
+
+  nav {
+    gap: 12px;
+  }
+
+  nav a {
+    font-size: 12px;
+  }
+
+  .nav-button {
+    padding: 10px;
+  }
+
+  .hero {
+    padding: 85px 20px;
+  }
+
+  .game-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .games-section {
+    padding: 65px 5%;
+  }
+
+  .about-section,
+  .contact-section {
+    padding: 65px 20px;
+  }
+}

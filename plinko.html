@@ -1,0 +1,407 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plinko | PlayForge</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  color: #24243b;
+  background: linear-gradient(135deg,#faf9ff,#edf3ff);
+}
+nav {
+  background: white;
+  padding: 20px 6%;
+  border-bottom: 1px solid #e8e5f2;
+}
+nav a {
+  color: #7155ed;
+  font-weight: bold;
+  text-decoration: none;
+}
+.container {
+  max-width: 900px;
+  margin: 35px auto;
+  padding: 15px;
+}
+.panel {
+  background: white;
+  padding: 28px;
+  border-radius: 24px;
+  text-align: center;
+  box-shadow: 0 15px 45px #29205b12;
+}
+h1 { font-size: 40px; margin: 8px 0; }
+.subtitle { color: #77778b; line-height: 1.6; }
+.board {
+  width: min(100%,560px);
+  margin: 25px auto;
+  background: #f6f3ff;
+  border: 2px solid #e5dfff;
+  border-radius: 20px;
+  overflow: hidden;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+button {
+  background: #7155ed;
+  color: white;
+  border: 0;
+  padding: 16px 35px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+button:hover { background: #5840d0; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.info {
+  color: #77778b;
+  font-size: 14px;
+  margin: 15px 0;
+}
+.reward {
+  display: none;
+  margin: 25px auto 0;
+  max-width: 560px;
+  padding: 25px;
+  border-radius: 18px;
+  background: #f0edff;
+  border: 2px dashed #7155ed;
+}
+.reward h2 { color: #7155ed; }
+.code {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  font-size: 23px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin: 15px 0;
+}
+.small { color: #77778b; font-size: 12px; }
+@media(max-width:600px) {
+  .panel { padding: 12px; }
+  h1 { font-size: 31px; }
+}
+</style>
+</head>
+<body>
+
+<nav><a href="index.html">← Back to PlayForge</a></nav>
+
+<div class="container">
+<div class="panel">
+  <h1>🔴 Plinko</h1>
+  <p class="subtitle">
+    Drop the ball and watch it bounce!
+    Wherever it lands, that's your discount.
+    Win anywhere from 1% to 50% off.
+  </p>
+
+  <div class="board">
+    <canvas id="game" width="540" height="620"></canvas>
+  </div>
+
+  <button id="dropButton">DROP BALL</button>
+  <p class="info" id="status">
+    One ball. Nine possible discounts. Good luck!
+  </p>
+
+  <div class="reward" id="reward">
+    <h2>🎉 YOU WON!</h2>
+    <h1 id="discountText">10% OFF</h1>
+    <p>Your exclusive discount code:</p>
+    <div class="code" id="rewardCode">PLINKO10</div>
+    <button id="copyButton">Copy Code</button>
+    <p class="small">
+      Demo code only. Not redeemable.
+    </p>
+  </div>
+</div>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const W = canvas.width;
+const H = canvas.height;
+
+const dropButton = document.getElementById("dropButton");
+const statusEl = document.getElementById("status");
+const rewardEl = document.getElementById("reward");
+const discountText = document.getElementById("discountText");
+const rewardCode = document.getElementById("rewardCode");
+
+// Each slot has its own prize and code.
+const prizes = [
+  {discount:1,  code:"PLINKO1"},
+  {discount:3,  code:"PLINKO3"},
+  {discount:5,  code:"PLINKO5"},
+  {discount:10, code:"PLINKO10"},
+  {discount:15, code:"PLINKO15"},
+  {discount:20, code:"PLINKO20"},
+  {discount:25, code:"PLINKO25"},
+  {discount:35, code:"PLINKO35"},
+  {discount:50, code:"PLINKO50"}
+];
+
+const slotCount = prizes.length;
+const left = 27;
+const right = 513;
+const slotWidth = (right-left)/slotCount;
+const floorY = 586;
+const pegRadius = 5.5;
+const ballRadius = 9;
+
+let pegs = [];
+let ball = null;
+let running = false;
+let selectedSlot = -1;
+let lastTime = 0;
+
+// Generate staggered peg rows.
+for (let row = 0; row < 10; row++) {
+  const y = 115 + row*40;
+  const count = row%2===0 ? 8 : 9;
+
+  for (let col = 0; col < count; col++) {
+    const x = row%2===0
+      ? 54 + col*61.7
+      : 27 + col*60.75;
+
+    pegs.push({x,y});
+  }
+}
+
+function dropBall() {
+  if (running) return;
+
+  running = true;
+  selectedSlot = -1;
+  rewardEl.style.display = "none";
+  dropButton.disabled = true;
+  statusEl.textContent = "Your ball is bouncing...";
+
+  // Small random starting variation.
+  ball = {
+    x: W/2 + (Math.random()-.5)*12,
+    y: 45,
+    vx: (Math.random()-.5)*1.5,
+    vy: 0
+  };
+}
+
+function update(dt) {
+  if (!running || !ball) return;
+
+  // Fixed-step physics is handled by the animation loop.
+  ball.vy += 0.19*dt;
+  ball.vx *= Math.pow(0.997,dt);
+
+  ball.x += ball.vx*dt;
+  ball.y += ball.vy*dt;
+
+  // Bounce against the side walls.
+  if (ball.x < left+ballRadius) {
+    ball.x = left+ballRadius;
+    ball.vx = Math.abs(ball.vx)*0.75;
+  }
+  if (ball.x > right-ballRadius) {
+    ball.x = right-ballRadius;
+    ball.vx = -Math.abs(ball.vx)*0.75;
+  }
+
+  // Collisions with pegs.
+  for (const peg of pegs) {
+    const dx = ball.x-peg.x;
+    const dy = ball.y-peg.y;
+    const dist = Math.hypot(dx,dy);
+    const minDist = ballRadius+pegRadius;
+
+    if (dist < minDist) {
+      let nx,ny;
+
+      if (dist < 0.001) {
+        nx = Math.random()<0.5 ? -1 : 1;
+        ny = 0;
+      } else {
+        nx = dx/dist;
+        ny = dy/dist;
+      }
+
+      ball.x = peg.x + nx*minDist;
+      ball.y = peg.y + ny*minDist;
+
+      const dot = ball.vx*nx + ball.vy*ny;
+
+      if (dot < 0) {
+        ball.vx -= 1.65*dot*nx;
+        ball.vy -= 1.65*dot*ny;
+      }
+
+      ball.vx += (Math.random()-.5)*0.8;
+      ball.vx = Math.max(-5,Math.min(5,ball.vx));
+    }
+  }
+
+  // Prize-slot dividers.
+  if (ball.y+ballRadius > 528 && ball.y-ballRadius < floorY) {
+    for (let i=1;i<slotCount;i++) {
+      const dividerX = left+i*slotWidth;
+
+      if (Math.abs(ball.x-dividerX) < ballRadius+3) {
+        const dir = ball.x<dividerX ? -1 : 1;
+        ball.x = dividerX+dir*(ballRadius+3);
+        ball.vx = dir*Math.max(1,Math.abs(ball.vx)*0.6);
+      }
+    }
+  }
+
+  // Land in a prize slot.
+  if (ball.y >= floorY-ballRadius) {
+    ball.y = floorY-ballRadius;
+    running = false;
+
+    selectedSlot = Math.max(0,Math.min(
+      slotCount-1,
+      Math.floor((ball.x-left)/slotWidth)
+    ));
+
+    const prize = prizes[selectedSlot];
+    discountText.textContent = prize.discount+"% OFF";
+    rewardCode.textContent = prize.code;
+    rewardEl.style.display = "block";
+    dropButton.disabled = false;
+    dropButton.textContent = "PLAY AGAIN";
+    statusEl.textContent =
+      "You landed on "+prize.discount+"% off!";
+  }
+}
+
+function roundedRect(x,y,w,h,r,color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.roundRect(x,y,w,h,r);
+  ctx.fill();
+}
+
+function draw() {
+  ctx.clearRect(0,0,W,H);
+
+  const gradient = ctx.createLinearGradient(0,0,0,H);
+  gradient.addColorStop(0,"#faf8ff");
+  gradient.addColorStop(1,"#e9e4ff");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0,0,W,H);
+
+  // Board rails.
+  roundedRect(17,60,10,535,5,"#a99be9");
+  roundedRect(513,60,10,535,5,"#a99be9");
+
+  // Drop indicator.
+  ctx.fillStyle = "#7155ed";
+  ctx.beginPath();
+  ctx.moveTo(W/2,22);
+  ctx.lineTo(W/2-12,38);
+  ctx.lineTo(W/2+12,38);
+  ctx.fill();
+
+  // Pegs.
+  for (const peg of pegs) {
+    ctx.beginPath();
+    ctx.arc(peg.x,peg.y,pegRadius,0,Math.PI*2);
+    ctx.fillStyle = "#a695ed";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(peg.x-1.5,peg.y-1.5,2,0,Math.PI*2);
+    ctx.fillStyle = "#e6ddff";
+    ctx.fill();
+  }
+
+  // Prize slots.
+  for (let i=0;i<slotCount;i++) {
+    const x = left+i*slotWidth;
+    const prize = prizes[i];
+
+    let color = i%2===0 ? "#ded5ff" : "#cbbdff";
+    if (i===8) color = "#7155ed";
+    if (i===selectedSlot) color = "#35c997";
+
+    roundedRect(
+      x+2,540,slotWidth-4,58,5,color
+    );
+
+    ctx.fillStyle = i===8 && i!==selectedSlot
+      ? "#ffffff" : "#30245c";
+    ctx.font = "bold 15px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(
+      prize.discount+"%",
+      x+slotWidth/2,
+      573
+    );
+
+    if (i>0) {
+      ctx.fillStyle = "#9787d8";
+      ctx.fillRect(x-3,525,6,65);
+    }
+  }
+
+  ctx.textAlign = "left";
+
+  // Ball.
+  if (ball) {
+    ctx.beginPath();
+    ctx.arc(ball.x,ball.y,ballRadius,0,Math.PI*2);
+    ctx.fillStyle = "#ff668c";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(ball.x-3,ball.y-3,3,0,Math.PI*2);
+    ctx.fillStyle = "#ffc0d0";
+    ctx.fill();
+  }
+}
+
+function loop(timestamp) {
+  const dt = Math.min((timestamp-lastTime)/16.67 || 1,2);
+  lastTime = timestamp;
+
+  // Substeps reduce missed collisions.
+  const steps = 3;
+  for(let i=0;i<steps;i++) {
+    update(dt/steps);
+  }
+
+  draw();
+  requestAnimationFrame(loop);
+}
+
+dropButton.addEventListener("click",dropBall);
+
+document.getElementById("copyButton")
+  .addEventListener("click",async()=>{
+    const code = rewardCode.textContent;
+    try {
+      await navigator.clipboard.writeText(code);
+      statusEl.textContent = "Demo code copied: "+code;
+    } catch {
+      statusEl.textContent = "Your demo code is "+code;
+    }
+  });
+
+draw();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

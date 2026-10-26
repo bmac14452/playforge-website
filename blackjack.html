@@ -1,0 +1,557 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blackjack | PlayForge</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  color: #24243b;
+  background: linear-gradient(135deg,#faf9ff,#edf3ff);
+}
+
+nav {
+  padding: 20px 6%;
+  background: white;
+  border-bottom: 1px solid #e8e5f2;
+}
+
+nav a {
+  color: #7155ed;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 35px auto;
+  padding: 15px;
+}
+
+.panel {
+  background: white;
+  padding: 25px;
+  border-radius: 24px;
+  text-align: center;
+  box-shadow: 0 15px 45px #29205b12;
+}
+
+h1 {
+  font-size: 40px;
+  margin: 8px 0;
+}
+
+.subtitle {
+  color: #77778b;
+  line-height: 1.6;
+}
+
+.table {
+  margin-top: 25px;
+  background: radial-gradient(
+    ellipse at center,
+    #16876b 0%,
+    #09634f 70%,
+    #064637 100%
+  );
+  border: 12px solid #4c346f;
+  border-radius: 45% 45% 25% 25% / 25% 25% 18% 18%;
+  min-height: 480px;
+  padding: 30px 15px;
+  color: white;
+  box-shadow: inset 0 0 30px #003b2d88;
+}
+
+.hand-label {
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  opacity: .85;
+}
+
+.hand {
+  min-height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+
+.card {
+  width: 76px;
+  height: 110px;
+  border-radius: 9px;
+  background: #fff;
+  color: #202030;
+  border: 2px solid #ddd;
+  position: relative;
+  box-shadow: 0 5px 10px #0003;
+  animation: deal .3s ease-out;
+}
+
+.card.red { color: #e13b56; }
+
+.card .top {
+  position: absolute;
+  top: 7px;
+  left: 8px;
+  font-weight: bold;
+  font-size: 18px;
+  text-align: left;
+  line-height: 1;
+}
+
+.card .middle {
+  position: absolute;
+  top: 32px;
+  left: 0;
+  width: 100%;
+  font-size: 42px;
+}
+
+.card.back {
+  background: repeating-linear-gradient(
+    45deg,#7155ed,#7155ed 8px,
+    #a998ff 8px,#a998ff 16px
+  );
+  border: 5px solid white;
+}
+
+@keyframes deal {
+  from {
+    opacity: 0;
+    transform: translateY(-35px) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
+}
+
+.score {
+  display: inline-block;
+  background: #ffffff25;
+  padding: 7px 18px;
+  border-radius: 20px;
+  font-weight: bold;
+}
+
+.divider {
+  margin: 20px auto;
+  max-width: 440px;
+  border-top: 2px dashed #ffffff55;
+}
+
+.message {
+  min-height: 45px;
+  font-size: 20px;
+  font-weight: bold;
+  margin: 15px 0;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+button {
+  background: #7155ed;
+  color: white;
+  border: 0;
+  border-radius: 12px;
+  padding: 15px 24px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover { background: #5840d0; }
+
+button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.secondary { background: #34364f; }
+.secondary:hover { background: #24253a; }
+
+.reward {
+  display: none;
+  max-width: 550px;
+  margin: 25px auto 0;
+  background: #f0edff;
+  border: 2px dashed #7155ed;
+  border-radius: 18px;
+  padding: 25px;
+}
+
+.reward h2 { color: #7155ed; }
+
+.code {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin: 15px 0;
+}
+
+.small {
+  font-size: 12px;
+  color: #77778b;
+}
+
+@media(max-width:600px) {
+  .panel { padding: 12px; }
+  h1 { font-size: 31px; }
+  .table {
+    border-width: 7px;
+    border-radius: 40px;
+    padding: 20px 8px;
+  }
+  .card { width: 53px; height: 80px; }
+  .card .top { font-size: 14px; }
+  .card .middle { top: 24px; font-size: 29px; }
+  button { padding: 13px 15px; }
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+  <a href="index.html">← Back to PlayForge</a>
+</nav>
+
+<div class="container">
+<div class="panel">
+
+<h1>🃏 Blackjack</h1>
+
+<p class="subtitle">
+  Beat the dealer to unlock an exclusive discount.
+  Hit, Stand, or Double Down. Get 21 with your
+  first two cards to win the jackpot!
+</p>
+
+<div class="table">
+
+  <div class="hand-label">DEALER</div>
+  <div class="hand" id="dealerHand"></div>
+  <div class="score" id="dealerScore">Score: ?</div>
+
+  <div class="divider"></div>
+
+  <div class="message" id="message">
+    Press Deal to begin!
+  </div>
+
+  <div class="hand-label">YOUR HAND</div>
+  <div class="hand" id="playerHand"></div>
+  <div class="score" id="playerScore">Score: 0</div>
+
+</div>
+
+<div class="controls">
+  <button id="dealButton">DEAL CARDS</button>
+  <button id="hitButton" disabled>HIT</button>
+  <button id="standButton" disabled>STAND</button>
+  <button id="doubleButton" class="secondary" disabled>
+    DOUBLE DOWN
+  </button>
+</div>
+
+<div class="reward" id="reward">
+  <h2>🎉 YOU BEAT THE DEALER!</h2>
+  <h1 id="discountText">10% OFF</h1>
+  <p>Your exclusive reward code:</p>
+  <div class="code" id="rewardCode">BJ10</div>
+  <button id="copyButton">COPY CODE</button>
+  <p class="small">
+    Demonstration code only. Not redeemable.
+  </p>
+</div>
+
+<p class="small">
+  Free demo game. No money, wagers, or real prizes.
+</p>
+
+</div>
+</div>
+
+<script>
+const suits = ["♠","♥","♦","♣"];
+const ranks = [
+  "A","2","3","4","5","6","7",
+  "8","9","10","J","Q","K"
+];
+
+let deck = [];
+let player = [];
+let dealer = [];
+let playing = false;
+let firstMove = true;
+let busy = false;
+let currentCode = "";
+
+const playerHandEl = document.getElementById("playerHand");
+const dealerHandEl = document.getElementById("dealerHand");
+const playerScoreEl = document.getElementById("playerScore");
+const dealerScoreEl = document.getElementById("dealerScore");
+const messageEl = document.getElementById("message");
+const rewardEl = document.getElementById("reward");
+
+const dealButton = document.getElementById("dealButton");
+const hitButton = document.getElementById("hitButton");
+const standButton = document.getElementById("standButton");
+const doubleButton = document.getElementById("doubleButton");
+
+function createDeck() {
+  deck = [];
+
+  for (const suit of suits) {
+    for (const rank of ranks) {
+      deck.push({suit,rank});
+    }
+  }
+
+  for (let i=deck.length-1;i>0;i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [deck[i],deck[j]] = [deck[j],deck[i]];
+  }
+}
+
+function drawCard() {
+  return deck.pop();
+}
+
+function cardValue(rank) {
+  if (rank==="A") return 11;
+  if (["J","Q","K"].includes(rank)) return 10;
+  return Number(rank);
+}
+
+function handValue(hand) {
+  let total = 0;
+  let aces = 0;
+
+  for (const card of hand) {
+    total += cardValue(card.rank);
+    if (card.rank==="A") aces++;
+  }
+
+  while (total>21 && aces>0) {
+    total -= 10;
+    aces--;
+  }
+
+  return total;
+}
+
+function cardHTML(card,hidden=false) {
+  if (hidden) return '<div class="card back"></div>';
+
+  const red = ["♥","♦"].includes(card.suit);
+
+  return `
+    <div class="card ${red?"red":""}">
+      <div class="top">${card.rank}<br>${card.suit}</div>
+      <div class="middle">${card.suit}</div>
+    </div>
+  `;
+}
+
+function render(revealDealer=false) {
+  playerHandEl.innerHTML = player.map(c=>cardHTML(c)).join("");
+
+  dealerHandEl.innerHTML = dealer.map((c,i)=>
+    cardHTML(c,!revealDealer && i===1)
+  ).join("");
+
+  playerScoreEl.textContent =
+    "Score: "+handValue(player);
+
+  dealerScoreEl.textContent = revealDealer
+    ? "Score: "+handValue(dealer)
+    : "Showing: "+cardValue(dealer[0].rank);
+}
+
+function setControls() {
+  hitButton.disabled = !playing || busy;
+  standButton.disabled = !playing || busy;
+  doubleButton.disabled =
+    !playing || busy || !firstMove;
+
+  dealButton.disabled = playing || busy;
+}
+
+function deal() {
+  if (playing || busy) return;
+
+  createDeck();
+  player = [];
+  dealer = [];
+  playing = true;
+  firstMove = true;
+  currentCode = "";
+
+  rewardEl.style.display = "none";
+
+  player.push(drawCard());
+  dealer.push(drawCard());
+  player.push(drawCard());
+  dealer.push(drawCard());
+
+  render(false);
+  messageEl.textContent = "Your move!";
+  setControls();
+
+  const playerBJ = handValue(player)===21;
+  const dealerBJ = handValue(dealer)===21;
+
+  if (playerBJ || dealerBJ) {
+    if (playerBJ && dealerBJ) {
+      endGame("push","Both have Blackjack. It's a tie!");
+    } else if (playerBJ) {
+      endGame("blackjack","NATURAL BLACKJACK! 🎉");
+    } else {
+      endGame("lose","Dealer has Blackjack!");
+    }
+  }
+}
+
+function hit() {
+  if (!playing || busy) return;
+
+  player.push(drawCard());
+  firstMove = false;
+  render(false);
+
+  const total = handValue(player);
+
+  if (total>21) {
+    endGame("lose","Bust! You went over 21.");
+  } else if (total===21) {
+    stand();
+  } else {
+    messageEl.textContent = "Hit or Stand?";
+    setControls();
+  }
+}
+
+function stand() {
+  if (!playing || busy) return;
+  firstMove = false;
+  dealerTurn();
+}
+
+function doubleDown() {
+  if (!playing || busy || !firstMove) return;
+
+  player.push(drawCard());
+  firstMove = false;
+  render(false);
+
+  if (handValue(player)>21) {
+    endGame("lose","Bust after Double Down!");
+  } else {
+    dealerTurn();
+  }
+}
+
+async function dealerTurn() {
+  busy = true;
+  setControls();
+
+  render(true);
+  messageEl.textContent = "Dealer's turn...";
+
+  await wait(650);
+
+  while (handValue(dealer)<17) {
+    dealer.push(drawCard());
+    render(true);
+    await wait(650);
+  }
+
+  const p = handValue(player);
+  const d = handValue(dealer);
+
+  if (d>21 || p>d) {
+    endGame("win","You beat the dealer! 🎉");
+  } else if (p===d) {
+    endGame("push","It's a tie!");
+  } else {
+    endGame("lose","Dealer wins. Try again!");
+  }
+}
+
+function wait(ms) {
+  return new Promise(resolve=>setTimeout(resolve,ms));
+}
+
+function endGame(result,message) {
+  playing = false;
+  busy = false;
+
+  render(true);
+  messageEl.textContent = message;
+  setControls();
+
+  dealButton.textContent = "PLAY AGAIN";
+
+  if (result==="win" || result==="blackjack") {
+    let discount;
+
+    if (result==="blackjack") {
+      discount = 50;
+    } else {
+      const possible = [5,10,15,20,25];
+      discount = possible[
+        Math.floor(Math.random()*possible.length)
+      ];
+    }
+
+    currentCode = "BJ"+discount;
+
+    document.getElementById("discountText")
+      .textContent = discount+"% OFF";
+
+    document.getElementById("rewardCode")
+      .textContent = currentCode;
+
+    rewardEl.style.display = "block";
+  }
+}
+
+document.getElementById("copyButton")
+  .addEventListener("click",async()=>{
+    try {
+      await navigator.clipboard.writeText(currentCode);
+      messageEl.textContent = "Demo code copied!";
+    } catch {
+      messageEl.textContent =
+        "Your demo code is "+currentCode;
+    }
+  });
+
+dealButton.addEventListener("click",deal);
+hitButton.addEventListener("click",hit);
+standButton.addEventListener("click",stand);
+doubleButton.addEventListener("click",doubleDown);
+</script>
+
+</body>
+</html>
