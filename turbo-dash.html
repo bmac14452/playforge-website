@@ -1,0 +1,541 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Turbo Dash | PlayForge</title>
+<style>
+*{box-sizing:border-box}
+:root{
+ --bg:#101827;
+ --panel:#19263a;
+ --line:#304259;
+ --cyan:#42d9ec;
+ --white:#f2f7ff;
+ --muted:#a9b8cb;
+}
+body{
+ margin:0;
+ background:radial-gradient(circle at top,#233b58,#101827 65%);
+ color:var(--white);
+ font-family:Arial,sans-serif;
+ text-align:center;
+}
+header{
+ display:flex;justify-content:space-between;
+ align-items:center;gap:12px;
+ padding:17px max(16px,calc((100vw - 1000px)/2));
+ background:#0c1422;
+ border-bottom:1px solid #304259;
+}
+header a{
+ color:var(--cyan);text-decoration:none;font-weight:bold;
+}
+header strong{font-size:20px}
+main{max-width:650px;margin:auto;padding:25px 13px 50px}
+h1{
+ font-size:clamp(34px,6vw,52px);
+ margin:10px 0;
+ letter-spacing:-1px;
+}
+.subtitle{color:var(--muted);line-height:1.7}
+.game-shell{
+ background:var(--panel);
+ border:1px solid var(--line);
+ padding:13px;border-radius:22px;
+ box-shadow:0 20px 50px #0005;
+}
+.stats{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:8px;margin-bottom:12px;
+}
+.stat{
+ background:#101b2b;
+ padding:13px 5px;
+ border-radius:11px;
+ font-size:14px;
+ font-weight:bold;
+}
+canvas{
+ display:block;width:100%;height:auto;
+ border-radius:14px;background:#303942;
+ touch-action:none;
+}
+.controls{
+ display:flex;justify-content:center;
+ gap:15px;margin-top:14px;
+}
+button{
+ border:0;background:#29bed4;
+ color:#071c28;
+ padding:15px 24px;
+ border-radius:12px;
+ font-weight:bold;font-size:16px;
+ cursor:pointer;
+}
+button:hover{background:#66e5f3}
+.move{
+ flex:1;max-width:180px;
+ font-size:25px;touch-action:none;
+}
+#startBtn{margin:20px 0}
+#message{
+ min-height:50px;
+ font-weight:bold;line-height:1.7;
+}
+.reward{
+ background:#173d35;
+ border:2px dashed #4de3aa;
+ border-radius:15px;
+ padding:20px;margin:15px 0;
+}
+.reward code{
+ display:inline-block;
+ background:#0c261f;
+ color:#8fffd2;
+ font-size:23px;
+ padding:12px 18px;
+ margin:12px;
+ border-radius:9px;
+}
+small{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header>
+<a href="index.html">← Back to PlayForge</a>
+<strong>🏁 Turbo Dash</strong>
+</header>
+
+<main>
+<h1>Turbo Dash 🏎️</h1>
+<p class="subtitle">
+Dodge traffic, collect bonus tokens and survive the highway.<br>
+Stay on the road for 45 seconds to unlock a detailing reward!
+</p>
+
+<div class="game-shell">
+
+ <div class="stats">
+  <div class="stat">🪙 Coins: <span id="coins">0</span></div>
+  <div class="stat">❤️ Lives: <span id="lives">3</span></div>
+  <div class="stat">⏱️ Time: <span id="time">45</span>s</div>
+ </div>
+
+ <canvas id="game" width="440" height="590"></canvas>
+
+ <div class="controls">
+  <button class="move" id="left">◀ LEFT</button>
+  <button class="move" id="right">RIGHT ▶</button>
+ </div>
+</div>
+
+<button id="startBtn">Start Engine ▶</button>
+<div id="message">Ready to hit the road?</div>
+<div id="rewardArea"></div>
+<small>Demo game only. Rewards are not valid at real automotive businesses.</small>
+</main>
+
+<script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+const coinsEl=document.getElementById("coins");
+const livesEl=document.getElementById("lives");
+const timeEl=document.getElementById("time");
+const message=document.getElementById("message");
+const rewardArea=document.getElementById("rewardArea");
+const startBtn=document.getElementById("startBtn");
+
+const W=canvas.width,H=canvas.height;
+const ROAD_LEFT=65,ROAD_RIGHT=375;
+const LANE_W=(ROAD_RIGHT-ROAD_LEFT)/3;
+const lanes=[
+ ROAD_LEFT+LANE_W*.5,
+ ROAD_LEFT+LANE_W*1.5,
+ ROAD_LEFT+LANE_W*2.5
+];
+
+let player={
+ lane:1,x:lanes[1],y:H-110,
+ w:49,h:85,invincible:0
+};
+
+let traffic=[],coins=[],particles=[];
+let score=0,lives=3,time=45;
+let running=false,last=0,clock=0;
+let trafficSpawn=0,coinSpawn=0;
+let roadOffset=0,elapsed=0;
+let animationId=null;
+let keys={left:false,right:false};
+let touchStartX=null;
+
+function reset(){
+ if(animationId!==null)cancelAnimationFrame(animationId);
+
+ player={
+  lane:1,x:lanes[1],y:H-110,
+  w:49,h:85,invincible:0
+ };
+ traffic=[];coins=[];particles=[];
+ score=0;lives=3;time=45;
+ clock=0;trafficSpawn=0;coinSpawn=0;
+ roadOffset=0;elapsed=0;last=0;
+ running=true;
+ keys.left=false;keys.right=false;
+
+ coinsEl.textContent=score;
+ livesEl.textContent=lives;
+ timeEl.textContent=time;
+ message.textContent="🏁 Go! Avoid the traffic!";
+ rewardArea.innerHTML="";
+ startBtn.textContent="Restart Race ↻";
+
+ animationId=requestAnimationFrame(loop);
+}
+
+function end(won){
+ running=false;
+ keys.left=false;keys.right=false;
+
+ if(won){
+  message.textContent="🏆 You survived the highway!";
+  rewardArea.innerHTML=`
+   <div class="reward">
+    <strong>🚗 YOU UNLOCKED 15% OFF DETAILING!</strong><br>
+    <code>TURBO15</code><br>
+    <small>Example promotional code — demo only.</small>
+   </div>`;
+ }else{
+  message.textContent="💥 Race over! Try again to unlock your reward.";
+ }
+}
+
+function switchLane(direction){
+ if(!running)return;
+ player.lane=Math.max(0,Math.min(2,player.lane+direction));
+}
+
+function drawRoad(){
+ ctx.fillStyle="#173d35";
+ ctx.fillRect(0,0,W,H);
+
+ // Grass texture
+ for(let i=0;i<25;i++){
+  const y=(i*39+roadOffset*.45)%H;
+  ctx.fillStyle=i%2?"#285849":"#32664e";
+  ctx.fillRect(12,y,22,4);
+  ctx.fillRect(405,y+17,18,4);
+ }
+
+ ctx.fillStyle="#424c58";
+ ctx.fillRect(ROAD_LEFT,0,ROAD_RIGHT-ROAD_LEFT,H);
+
+ ctx.fillStyle="#313a45";
+ ctx.fillRect(ROAD_LEFT+8,0,ROAD_RIGHT-ROAD_LEFT-16,H);
+
+ // Road edges
+ ctx.fillStyle="#f5f5f5";
+ ctx.fillRect(ROAD_LEFT+5,0,5,H);
+ ctx.fillRect(ROAD_RIGHT-10,0,5,H);
+
+ // Red-white kerbs
+ for(let y=-60;y<H+60;y+=50){
+  const yy=y+(roadOffset%100);
+  ctx.fillStyle=(Math.floor((y+60)/50)%2===0)?"#e84e4e":"#fff5e5";
+  ctx.fillRect(ROAD_LEFT-7,yy,10,48);
+  ctx.fillRect(ROAD_RIGHT-3,yy,10,48);
+ }
+
+ // Lane markings
+ for(let lane=1;lane<3;lane++){
+  const x=ROAD_LEFT+LANE_W*lane;
+  ctx.fillStyle="#e8edf4";
+  for(let y=-90;y<H+90;y+=95){
+   ctx.fillRect(x-3,y+(roadOffset%95),6,47);
+  }
+ }
+
+ // Roadside lights
+ for(let y=-80;y<H+80;y+=170){
+  const yy=y+(roadOffset*.8%170);
+  ctx.fillStyle="#c7e9ef";
+  ctx.fillRect(28,yy,7,26);
+  ctx.fillRect(405,yy,7,26);
+  ctx.fillStyle="#f5d877";
+  ctx.beginPath();ctx.arc(31,yy,9,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(408,yy,9,0,Math.PI*2);ctx.fill();
+ }
+}
+
+function drawCar(x,y,w,h,color,isPlayer=false){
+ ctx.save();
+ ctx.translate(x,y);
+
+ // Shadow
+ ctx.fillStyle="#0006";
+ ctx.beginPath();
+ ctx.ellipse(5,8,w*.6,h*.54,0,0,Math.PI*2);
+ ctx.fill();
+
+ // Wheels
+ ctx.fillStyle="#111820";
+ ctx.fillRect(-w/2-7,-h*.33,12,24);
+ ctx.fillRect(w/2-5,-h*.33,12,24);
+ ctx.fillRect(-w/2-7,h*.17,12,24);
+ ctx.fillRect(w/2-5,h*.17,12,24);
+
+ // Body
+ ctx.fillStyle=color;
+ ctx.beginPath();
+ ctx.roundRect(-w/2,-h/2,w,h,12);
+ ctx.fill();
+
+ // Hood highlight
+ ctx.fillStyle="#ffffff20";
+ ctx.beginPath();
+ ctx.roundRect(-w/2+6,-h/2+5,w-12,23,7);
+ ctx.fill();
+
+ // Windshield
+ ctx.fillStyle="#a9e4ed";
+ ctx.beginPath();
+ ctx.roundRect(-w/2+8,-h*.19,w-16,21,5);
+ ctx.fill();
+
+ // Rear glass
+ ctx.fillStyle="#1d3d50";
+ ctx.beginPath();
+ ctx.roundRect(-w/2+8,h*.19,w-16,15,4);
+ ctx.fill();
+
+ // Center stripe for player's sports car
+ if(isPlayer){
+  ctx.fillStyle="#fff";
+  ctx.fillRect(-4,-h*.42,8,h*.23);
+  ctx.fillRect(-4,h*.39,8,6);
+ }
+
+ // Headlights
+ ctx.fillStyle="#fff4ba";
+ ctx.fillRect(-w/2+5,-h/2+3,12,6);
+ ctx.fillRect(w/2-17,-h/2+3,12,6);
+
+ // Taillights
+ ctx.fillStyle="#ff514e";
+ ctx.fillRect(-w/2+5,h/2-9,11,6);
+ ctx.fillRect(w/2-16,h/2-9,11,6);
+
+ ctx.restore();
+}
+
+function drawCoin(c){
+ ctx.save();
+ ctx.translate(c.x,c.y);
+ ctx.fillStyle="#e7a928";
+ ctx.beginPath();ctx.arc(0,0,15,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#ffe37a";
+ ctx.beginPath();ctx.arc(0,0,11,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#b87813";
+ ctx.font="bold 17px Arial";
+ ctx.textAlign="center";
+ ctx.textBaseline="middle";
+ ctx.fillText("$",0,1);
+ ctx.restore();
+}
+
+function drawParticles(){
+ for(const p of particles){
+  ctx.fillStyle=p.color;
+  ctx.globalAlpha=Math.max(0,p.life);
+  ctx.beginPath();
+  ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+  ctx.fill();
+ }
+ ctx.globalAlpha=1;
+}
+
+function burst(x,y,color){
+ for(let i=0;i<15;i++){
+  const a=Math.random()*Math.PI*2;
+  const s=40+Math.random()*150;
+  particles.push({
+   x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,
+   life:1,size:2+Math.random()*5,color
+  });
+ }
+}
+
+function hit(a,b){
+ return Math.abs(a.x-b.x)<(a.w+b.w)*.43 &&
+        Math.abs(a.y-b.y)<(a.h+b.h)*.43;
+}
+
+function update(dt){
+ if(!running)return;
+
+ elapsed+=dt;
+ clock+=dt;
+ while(clock>=1){
+  clock-=1;
+  time--;
+  timeEl.textContent=time;
+  if(time<=0){end(true);return;}
+ }
+
+ const speed=225+elapsed*4;
+ roadOffset+=speed*dt;
+ player.invincible=Math.max(0,player.invincible-dt);
+
+ // Smooth lane movement
+ player.x+=(lanes[player.lane]-player.x)*Math.min(1,dt*13);
+
+ trafficSpawn+=dt;
+ const spawnRate=Math.max(.65,1.25-elapsed*.009);
+
+ if(trafficSpawn>=spawnRate){
+  trafficSpawn=0;
+  const lane=Math.floor(Math.random()*3);
+  const colors=["#e84d55","#ffbd4b","#8e7fe6","#65b9ef"];
+  traffic.push({
+   lane,x:lanes[lane],y:-100,
+   w:49,h:82,
+   color:colors[Math.floor(Math.random()*colors.length)],
+   passed:false
+  });
+ }
+
+ coinSpawn+=dt;
+ if(coinSpawn>=1.35){
+  coinSpawn=0;
+  coins.push({
+   lane:Math.floor(Math.random()*3),
+   x:0,y:-25,w:28,h:28
+  });
+  coins[coins.length-1].x=lanes[coins[coins.length-1].lane];
+ }
+
+ for(let i=traffic.length-1;i>=0;i--){
+  const car=traffic[i];
+  car.y+=speed*dt;
+
+  if(player.invincible<=0 && hit(player,car)){
+   traffic.splice(i,1);
+   lives--;
+   livesEl.textContent=lives;
+   player.invincible=1.4;
+   burst(player.x,player.y,"#ff8a4d");
+   message.textContent="💥 Collision! Watch the traffic!";
+   if(lives<=0){end(false);return;}
+  }else if(car.y>H+110){
+   traffic.splice(i,1);
+  }
+ }
+
+ for(let i=coins.length-1;i>=0;i--){
+  const coin=coins[i];
+  coin.y+=speed*dt;
+
+  if(hit(player,coin)){
+   coins.splice(i,1);
+   score++;
+   coinsEl.textContent=score;
+   burst(coin.x,coin.y,"#ffe27b");
+  }else if(coin.y>H+30){
+   coins.splice(i,1);
+  }
+ }
+
+ for(let i=particles.length-1;i>=0;i--){
+  const p=particles[i];
+  p.x+=p.vx*dt;
+  p.y+=p.vy*dt;
+  p.life-=dt*2.1;
+  if(p.life<=0)particles.splice(i,1);
+ }
+}
+
+function render(){
+ drawRoad();
+
+ for(const coin of coins)drawCoin(coin);
+ for(const car of traffic){
+  drawCar(car.x,car.y,car.w,car.h,car.color);
+ }
+
+ if(player.invincible<=0 || Math.floor(player.invincible*9)%2===0){
+  drawCar(player.x,player.y,player.w,player.h,"#39d7e9",true);
+ }
+
+ drawParticles();
+
+ // Progress bar
+ const progress=(45-time)/45;
+ ctx.fillStyle="#0b1625cc";
+ ctx.fillRect(90,15,260,17);
+ ctx.fillStyle="#42d9ec";
+ ctx.fillRect(93,18,254*progress,11);
+ ctx.strokeStyle="#fff7";
+ ctx.strokeRect(90,15,260,17);
+}
+
+function loop(timestamp){
+ if(!running)return;
+ if(!last)last=timestamp;
+ const dt=Math.min((timestamp-last)/1000,.04);
+ last=timestamp;
+
+ update(dt);
+ render();
+
+ if(running)animationId=requestAnimationFrame(loop);
+}
+
+document.getElementById("left").addEventListener("click",()=>{
+ switchLane(-1);
+});
+document.getElementById("right").addEventListener("click",()=>{
+ switchLane(1);
+});
+
+window.addEventListener("keydown",e=>{
+ if(!running)return;
+ if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a"){
+  if(!keys.left)switchLane(-1);
+  keys.left=true;
+  e.preventDefault();
+ }
+ if(e.key==="ArrowRight"||e.key.toLowerCase()==="d"){
+  if(!keys.right)switchLane(1);
+  keys.right=true;
+  e.preventDefault();
+ }
+});
+
+window.addEventListener("keyup",e=>{
+ if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")keys.left=false;
+ if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")keys.right=false;
+});
+
+canvas.addEventListener("pointerdown",e=>{
+ touchStartX=e.clientX;
+});
+
+canvas.addEventListener("pointerup",e=>{
+ if(touchStartX===null)return;
+ const delta=e.clientX-touchStartX;
+ if(delta>25)switchLane(1);
+ if(delta<-25)switchLane(-1);
+ touchStartX=null;
+});
+
+canvas.addEventListener("pointercancel",()=>touchStartX=null);
+
+startBtn.addEventListener("click",reset);
+render();
+</script>
+</body>
+</html>

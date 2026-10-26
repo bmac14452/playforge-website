@@ -1,0 +1,366 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coffee Catch | PlayForge</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#f8efe3;color:#443023;
+ font-family:Arial,sans-serif;text-align:center;
+}
+header{
+ padding:17px;background:#fffaf3;
+ border-bottom:1px solid #e9d6c0;
+ display:flex;justify-content:space-between;
+ align-items:center;gap:12px;
+}
+header a{color:#70482e;text-decoration:none;font-weight:bold}
+header strong{font-size:20px}
+main{max-width:560px;margin:auto;padding:24px 14px}
+h1{font-size:38px;margin:8px 0}
+.subtitle{color:#80634e;line-height:1.6}
+.game-shell{
+ background:#fffaf3;padding:13px;border-radius:22px;
+ box-shadow:0 12px 35px #67432120;
+}
+.stats{
+ display:flex;justify-content:space-between;
+ gap:8px;margin-bottom:12px;font-weight:bold;
+}
+.stat{
+ background:#f2e4d2;padding:12px 8px;
+ border-radius:12px;flex:1;font-size:14px;
+}
+canvas{
+ display:block;width:100%;height:auto;
+ border-radius:15px;touch-action:none;
+ background:#ead3b4;
+}
+.controls{
+ display:flex;justify-content:center;
+ gap:15px;margin-top:13px;
+}
+button{
+ border:0;background:#75482d;color:white;
+ border-radius:12px;padding:15px 23px;
+ font-size:16px;font-weight:bold;cursor:pointer;
+}
+button:hover{background:#57331f}
+.move{flex:1;max-width:160px;font-size:23px;touch-action:none}
+#startBtn{margin:15px 0}
+#message{font-weight:bold;line-height:1.7;min-height:55px}
+.reward{
+ background:#e6f1db;border:2px dashed #71935b;
+ padding:17px;border-radius:13px;margin:15px 0;
+}
+.reward code{
+ display:inline-block;margin:10px 0;
+ background:white;padding:10px 15px;
+ border-radius:8px;font-size:20px;
+}
+small{color:#80634e}
+</style>
+</head>
+<body>
+
+<header>
+<a href="index.html">← Back to PlayForge</a>
+<strong>☕ Coffee Catch</strong>
+</header>
+
+<main>
+<h1>Coffee Catch ☕</h1>
+<p class="subtitle">
+Catch the good beans. Avoid the burnt ones.<br>
+Reach 20 points before time runs out!
+</p>
+
+<div class="game-shell">
+ <div class="stats">
+  <div class="stat">☕ Score: <span id="score">0</span></div>
+  <div class="stat">❤️ Lives: <span id="lives">3</span></div>
+  <div class="stat">⏱️ Time: <span id="time">30</span>s</div>
+ </div>
+
+ <canvas id="game" width="420" height="500"></canvas>
+
+ <div class="controls">
+  <button class="move" id="left">◀</button>
+  <button class="move" id="right">▶</button>
+ </div>
+</div>
+
+<button id="startBtn">Start Game ▶</button>
+<div id="message">Press Start to play!</div>
+<div id="rewardArea"></div>
+<small>Demo game only. Rewards are not valid at real coffee shops.</small>
+</main>
+
+<script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+const scoreEl=document.getElementById("score");
+const livesEl=document.getElementById("lives");
+const timeEl=document.getElementById("time");
+const message=document.getElementById("message");
+const rewardArea=document.getElementById("rewardArea");
+const startBtn=document.getElementById("startBtn");
+
+const W=canvas.width,H=canvas.height;
+let player={x:W/2,y:H-67,w:84,h:55};
+let items=[],score=0,lives=3,time=30;
+let running=false,last=0,spawn=0,clock=0;
+let animationId=null;
+let keys={left:false,right:false};
+let pointerX=null;
+
+function reset(){
+ if(animationId!==null)cancelAnimationFrame(animationId);
+ player.x=W/2;items=[];score=0;lives=3;time=30;
+ spawn=0;clock=0;last=0;running=true;
+ keys.left=false;keys.right=false;pointerX=null;
+ scoreEl.textContent=score;
+ livesEl.textContent=lives;
+ timeEl.textContent=time;
+ message.textContent="Catch those beans!";
+ rewardArea.innerHTML="";
+ startBtn.textContent="Restart Game ↻";
+ animationId=requestAnimationFrame(loop);
+}
+
+function end(won){
+ running=false;
+ keys.left=false;keys.right=false;pointerX=null;
+ if(won){
+  message.textContent="☕ Amazing! You've earned a coffee reward!";
+  rewardArea.innerHTML=`
+   <div class="reward">
+    <strong>🎉 FREE SIZE UPGRADE!</strong><br>
+    <code>COFFEEUP</code><br>
+    <small>Example promotional code — demo only.</small>
+   </div>`;
+ }else{
+  message.textContent="Game over! Try again to unlock the reward.";
+ }
+}
+
+function drawBackground(){
+ const gradient=ctx.createLinearGradient(0,0,0,H);
+ gradient.addColorStop(0,"#f2ddc1");
+ gradient.addColorStop(1,"#d7ae80");
+ ctx.fillStyle=gradient;
+ ctx.fillRect(0,0,W,H);
+
+ ctx.fillStyle="#fff4e3";
+ ctx.fillRect(0,0,W,90);
+
+ ctx.fillStyle="#c79d75";
+ for(let x=15;x<W;x+=95){
+  ctx.fillRect(x,68,60,8);
+ }
+
+ ctx.fillStyle="#8d5d39";
+ ctx.font="bold 21px Arial";
+ ctx.textAlign="center";
+ ctx.fillText("THE DAILY GRIND",W/2,43);
+
+ ctx.fillStyle="#bd8a5d";
+ ctx.fillRect(0,H-30,W,30);
+
+ ctx.fillStyle="#f5e5d0";
+ for(let i=0;i<7;i++){
+  ctx.fillRect(i*75-15,H-25,43,3);
+ }
+}
+
+function drawCup(){
+ const x=player.x,y=player.y;
+
+ ctx.save();
+ ctx.translate(x,y);
+
+ ctx.fillStyle="#ffffff";
+ ctx.strokeStyle="#784e35";
+ ctx.lineWidth=4;
+
+ ctx.beginPath();
+ ctx.moveTo(-player.w/2,-18);
+ ctx.lineTo(player.w/2,-18);
+ ctx.lineTo(player.w/2-12,player.h/2+12);
+ ctx.lineTo(-player.w/2+12,player.h/2+12);
+ ctx.closePath();
+ ctx.fill();ctx.stroke();
+
+ ctx.fillStyle="#a76b45";
+ ctx.fillRect(-player.w/2-5,-24,player.w+10,12);
+
+ ctx.fillStyle="#d9b28c";
+ ctx.fillRect(-player.w/2+12,-2,player.w-24,26);
+
+ ctx.fillStyle="#70452c";
+ ctx.font="bold 15px Arial";
+ ctx.textAlign="center";
+ ctx.fillText("COFFEE",0,17);
+
+ ctx.restore();
+}
+
+function drawBean(item){
+ ctx.save();
+ ctx.translate(item.x,item.y);
+ ctx.rotate(item.angle);
+ ctx.fillStyle=item.bad?"#27201c":"#88512f";
+ ctx.beginPath();
+ ctx.ellipse(0,0,13,19,0,0,Math.PI*2);
+ ctx.fill();
+
+ ctx.strokeStyle=item.bad?"#e36b45":"#d3a071";
+ ctx.lineWidth=3;
+ ctx.beginPath();
+ ctx.moveTo(-2,-13);
+ ctx.bezierCurveTo(8,-5,-8,5,2,13);
+ ctx.stroke();
+
+ if(item.bad){
+  ctx.fillStyle="#ff6e4a";
+  ctx.beginPath();
+  ctx.arc(9,-12,5,0,Math.PI*2);
+  ctx.fill();
+ }
+ ctx.restore();
+}
+
+function update(dt){
+ if(!running)return;
+
+ clock+=dt;
+ while(clock>=1){
+  clock-=1;
+  time--;
+  timeEl.textContent=time;
+  if(time<=0){end(score>=20);return;}
+ }
+
+ const speed=300;
+ if(keys.left)player.x-=speed*dt;
+ if(keys.right)player.x+=speed*dt;
+ if(pointerX!==null){
+  player.x+=(pointerX-player.x)*Math.min(1,dt*13);
+ }
+ player.x=Math.max(48,Math.min(W-48,player.x));
+
+ spawn+=dt;
+ if(spawn>=0.48){
+  spawn=0;
+  items.push({
+   x:25+Math.random()*(W-50),
+   y:-25,
+   vy:145+Math.random()*85,
+   bad:Math.random()<0.23,
+   angle:Math.random()*Math.PI
+  });
+ }
+
+ for(let i=items.length-1;i>=0;i--){
+  let b=items[i];
+  b.y+=b.vy*dt;
+  b.angle+=dt;
+
+  const caught=
+   Math.abs(b.x-player.x)<player.w/2+4 &&
+   b.y+13>player.y-23 &&
+   b.y-13<player.y+player.h/2+12;
+
+  if(caught){
+   items.splice(i,1);
+   if(b.bad){
+    lives--;
+    livesEl.textContent=lives;
+    if(lives<=0){end(false);return;}
+   }else{
+    score++;
+    scoreEl.textContent=score;
+    if(score>=20){end(true);return;}
+   }
+  }else if(b.y>H+25){
+   items.splice(i,1);
+  }
+ }
+}
+
+function render(){
+ drawBackground();
+ for(const item of items)drawBean(item);
+ drawCup();
+}
+
+function loop(timestamp){
+ if(!running)return;
+ if(!last)last=timestamp;
+ const dt=Math.min((timestamp-last)/1000,.04);
+ last=timestamp;
+ update(dt);
+ render();
+ if(running)animationId=requestAnimationFrame(loop);
+}
+
+function setDirection(direction,value){
+ keys[direction]=value;
+ if(value)pointerX=null;
+}
+
+function bindButton(id,direction){
+ const el=document.getElementById(id);
+ el.addEventListener("pointerdown",e=>{
+  e.preventDefault();
+  el.setPointerCapture(e.pointerId);
+  setDirection(direction,true);
+ });
+ const release=()=>setDirection(direction,false);
+ el.addEventListener("pointerup",release);
+ el.addEventListener("pointercancel",release);
+ el.addEventListener("lostpointercapture",release);
+}
+
+bindButton("left","left");
+bindButton("right","right");
+
+window.addEventListener("keydown",e=>{
+ if(["ArrowLeft","ArrowRight"].includes(e.key)){
+  e.preventDefault();
+  if(e.key==="ArrowLeft")setDirection("left",true);
+  if(e.key==="ArrowRight")setDirection("right",true);
+ }
+});
+
+window.addEventListener("keyup",e=>{
+ if(e.key==="ArrowLeft")keys.left=false;
+ if(e.key==="ArrowRight")keys.right=false;
+});
+
+function movePointer(e){
+ const r=canvas.getBoundingClientRect();
+ pointerX=(e.clientX-r.left)*(W/r.width);
+ pointerX=Math.max(48,Math.min(W-48,pointerX));
+}
+
+canvas.addEventListener("pointerdown",e=>{
+ if(!running)return;
+ canvas.setPointerCapture(e.pointerId);
+ movePointer(e);
+});
+canvas.addEventListener("pointermove",e=>{
+ if(!running || !canvas.hasPointerCapture(e.pointerId))return;
+ movePointer(e);
+});
+canvas.addEventListener("pointerup",()=>pointerX=null);
+canvas.addEventListener("pointercancel",()=>pointerX=null);
+
+startBtn.addEventListener("click",reset);
+render();
+</script>
+</body>
+</html>
