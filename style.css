@@ -851,3 +851,20 @@ footer {
     padding: 75px 5%;
   }
 }
+/* PlayForge blue feature icons */
+
+.service-icon svg,
+.visual-emoji svg {
+  width: 42px;
+  height: 42px;
+  stroke: #38BDF8;
+  stroke-width: 2.5;
+  fill: none;
+}
+
+.service-icon,
+.visual-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

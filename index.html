@@ -7,6 +7,7 @@
   <meta name="description" content="PlayForge creates custom interactive website games for businesses. Play our demos and hire us on Fiverr.">
   <title>PlayForge | Custom Interactive Website Games</title>
   <link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
 </head>
 <body>
 
@@ -314,7 +315,7 @@
   <div class="services-grid">
 
     <div class="service-card">
-      <div class="service-icon">🎨</div>
+      <div class="service-icon"><i data-lucide="paintbrush"></i></div>
       <h3>Custom Branding</h3>
       <p>
         Your business colours, logos, fonts and
@@ -323,7 +324,7 @@
     </div>
 
     <div class="service-card">
-      <div class="service-icon">🎁</div>
+      <div class="service-icon"><i data-lucide="ticket-percent"></i></div>
       <h3>Discount Rewards</h3>
       <p>
         Interactive prize mechanics and custom promotional
@@ -332,7 +333,7 @@
     </div>
 
     <div class="service-card">
-      <div class="service-icon">📱</div>
+      <div class="service-icon"><i data-lucide="monitor-smartphone"></i></div>
       <h3>Quick Responsive Design</h3>
       <p>
         Game interfaces designed to adapt to
@@ -341,7 +342,7 @@
     </div>
 
     <div class="service-card">
-      <div class="service-icon">🕹️</div>
+      <div class="service-icon"><i data-lucide="sliders-horizontal"></i></div>
       <h3>Custom Gameplay</h3>
       <p>
         Tailored rules, scoring systems, animations
@@ -382,7 +383,7 @@
 
   <div class="benefits-visual">
     <div class="visual-card">
-      <div class="visual-emoji">🎯</div>
+      <div class="visual-emoji"><i data-lucide="trophy"></i></div>
       <h3>PLAY. WIN. REPEAT.</h3>
       <p>Interactive experiences made for your audience.</p>
 
@@ -490,6 +491,10 @@
   </div>
 
 </footer>
-
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    lucide.createIcons();
+  });
+</script>
 </body>
 </html>
