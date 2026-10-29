@@ -913,3 +913,46 @@ footer {
   display: block;
   margin: auto;
 }
+/* Make Coffee Catch and Pizza Maker images fill their cards */
+
+.game-image.coffee .game-preview,
+.game-image.pizza .game-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  margin: 0;
+  display: block;
+}
+/* Full-size images for remaining game cards */
+
+.game-image.auto .game-preview,
+.game-image.photo .game-preview,
+.game-image.fitness .game-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  margin: 0;
+  display: block;
+}
+/* Make Automotive and Snapshot images fill their backgrounds */
+
+.game-image:has(img[src="Turbo dash.png"]) .game-preview,
+.game-image:has(img[src="Snapshot Challenge.png"]) .game-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  margin: 0;
+  display: block;
+}
+/* Business game images — slightly less zoomed */
+
+.business-grid .game-image .game-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  margin: 0;
+}
