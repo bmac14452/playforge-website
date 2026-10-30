@@ -956,3 +956,80 @@ footer {
   object-position: center;
   margin: 0;
 }
+
+/* WEBSITE DEVELOPMENT CTA */
+
+.website-cta {
+  background: #f5f3ff;
+  padding: 95px 24px;
+  text-align: center;
+}
+
+.website-cta-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.website-cta-label {
+  color: #7051e9;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.website-cta h2 {
+  color: #24233b;
+  font-size: clamp(32px, 4vw, 56px);
+  line-height: 1.15;
+  margin: 24px 0;
+}
+
+.website-cta p {
+  color: #55536f;
+  font-size: 18px;
+  line-height: 1.8;
+  max-width: 760px;
+  margin: 0 auto 30px;
+}
+
+.website-cta-tags {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 35px;
+}
+
+.website-cta-tags span {
+  background: #ffffff;
+  color: #55536f;
+  padding: 10px 16px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.website-cta-button {
+  display: inline-block;
+  background: #7051e9;
+  color: #ffffff;
+  padding: 17px 30px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.website-cta-button:hover {
+  background: #5538c9;
+}
+
+@media (max-width: 600px) {
+  .website-cta {
+    padding: 65px 20px;
+  }
+
+  .website-cta p {
+    font-size: 16px;
+  }
+}
